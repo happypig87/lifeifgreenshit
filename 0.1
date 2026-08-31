@@ -1,0 +1,392 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>郵差人生模擬器</title>
+    <style>
+        body {
+            background-color: #121212;
+            color: #e0e0e0;
+            font-family: 'PingFang TC', 'Microsoft JhengHei', sans-serif;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+            margin: 0;
+            padding: 20px;
+            box-sizing: border-box;
+        }
+        #game-card {
+            background: #1e1e1e;
+            border: 1px solid #333;
+            border-radius: 12px;
+            width: 100%;
+            max-width: 650px;
+            padding: 25px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.5);
+        }
+        .header {
+            border-bottom: 2px solid #333;
+            padding-bottom: 15px;
+            margin-bottom: 20px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        .stats-grid {
+            display: grid;
+            grid-template-columns: repeat(4, 1fr);
+            gap: 10px;
+            background: #2a2a2a;
+            padding: 12px;
+            border-radius: 8px;
+            margin-bottom: 20px;
+            text-align: center;
+            font-size: 14px;
+        }
+        .stat-val {
+            color: #4caf50;
+            font-weight: bold;
+            font-size: 16px;
+            display: block;
+            margin-top: 4px;
+        }
+        #story-text {
+            font-size: 16px;
+            line-height: 1.6;
+            min-height: 100px;
+            margin-bottom: 25px;
+            background: #252525;
+            padding: 15px;
+            border-left: 4px solid #2196f3;
+            border-radius: 4px;
+        }
+        .options-container {
+            display: flex;
+            flex-direction: column;
+            gap: 12px;
+        }
+        button {
+            background: #333;
+            color: #fff;
+            border: 1px solid #444;
+            padding: 14px 18px;
+            border-radius: 6px;
+            font-size: 15px;
+            cursor: pointer;
+            text-align: left;
+            transition: all 0.2s ease;
+        }
+        button:hover {
+            background: #2196f3;
+            border-color: #2196f3;
+            transform: translateY(-2px);
+        }
+        /* 初始設定表單樣式 */
+        .form-group {
+            margin-bottom: 20px;
+        }
+        label {
+            display: block;
+            margin-bottom: 8px;
+            font-size: 14px;
+            color: #bbb;
+        }
+        input[type="text"] {
+            width: 100%;
+            padding: 12px;
+            background: #2a2a2a;
+            border: 1px solid #444;
+            border-radius: 6px;
+            color: #fff;
+            font-size: 16px;
+            box-sizing: border-box;
+        }
+        input[type="range"] {
+            width: 100%;
+            accent-color: #2196f3;
+        }
+        .start-btn {
+            width: 100%;
+            background: #2196f3;
+            text-align: center;
+            font-weight: bold;
+            font-size: 18px;
+            margin-top: 10px;
+        }
+        .start-btn:hover {
+            background: #1976d2;
+        }
+        #log {
+            margin-top: 20px;
+            font-size: 13px;
+            color: #888;
+            max-height: 120px;
+            overflow-y: auto;
+            border-top: 1px solid #333;
+            padding-top: 10px;
+        }
+        .hidden { display: none !important; }
+    </style>
+</head>
+<body>
+
+<div id="game-card">
+    <!-- 1. 玩家創建角色介面 -->
+    <div id="setup-screen">
+        <h2 style="margin-top:0; text-align:center;">📋 郵務人員入職登記</h2>
+        <p style="color:#aaa; text-align:center; font-size:14px; margin-bottom: 25px;">請填寫你的基本資料，開啟長達數十年的郵務生涯。</p>
+        
+        <div class="form-group">
+            <label for="player-name">郵務士姓名：</label>
+            <input type="text" id="player-name" placeholder="請輸入姓名（例如：陳大天）" value="陳大天">
+        </div>
+
+        <div class="form-group">
+            <label for="start-age">入職年齡：<span id="age-val" style="color:#ffeb3b; font-weight:bold; font-size:18px;">22</span> 歲</label>
+            <input type="range" id="start-age" min="18" max="50" value="22" oninput="document.getElementById('age-val').innerText = this.value">
+            <div style="display:flex; justify-content:space-between; font-size:12px; color:#666; margin-top:5px;">
+                <span>18 歲 (社會新人)</span>
+                <span>50 歲 (中年轉職)</span>
+            </div>
+        </div>
+
+        <button class="start-btn" onclick="startGame()">正式報到入職</button>
+    </div>
+
+    <!-- 2. 遊戲主畫面 (初始隱藏) -->
+    <div id="game-screen" class="hidden">
+        <div class="header">
+            <div>
+                <h2 style="margin:0; font-size: 20px;" id="display-name">郵務士</h2>
+                <span id="display-career" style="font-size:12px; color:#aaa;">基層郵務士</span>
+            </div>
+            <div><span id="age" style="font-size: 22px; color:#ffeb3b;">18</span> 歲 (退休倒數 <span id="years-left">--</span> 年)</div>
+        </div>
+
+        <div class="stats-grid">
+            <div>體力<span id="stamina" class="stat-val">100</span></div>
+            <div>人情味<span id="reputation" class="stat-val">50</span></div>
+            <div>積蓄<span id="money" class="stat-val">$0</span></div>
+            <div>載具<span id="vehicle" class="stat-val" style="color:#00bcd4;">徒步</span></div>
+        </div>
+
+        <div id="story-text">載入中...</div>
+
+        <div id="options" class="options-container"></div>
+
+        <div id="log">--- 履歷日誌 ---</div>
+    </div>
+</div>
+
+<script>
+// 玩家資料與狀態
+let player = {
+    name: "",
+    age: 18,
+    startAge: 18,
+    retireAge: 65,
+    stamina: 100,
+    reputation: 50,
+    money: 1000,
+    vehicle: "腳踏車",
+    careerTitle: "基層郵務士"
+};
+
+// 事件資料庫
+const eventPool = [
+    {
+        title: "暴雨突襲",
+        desc: "午後突下傾盆大雨，你身上的防水布快要撐不住了，前方還有數十封掛號信未送達...",
+        options: [
+            { text: "冒雨繼續送完，絕不能耽誤信件！", effect: { stamina: -25, rep: 12, money: 0 }, log: "雖然全身濕透感冒了，但居民對你的敬業態度讚不絕口。" },
+            { text: "先在路邊騎樓躲雨，等雨勢稍緩", effect: { stamina: -5, rep: 0, money: 0 }, log: "雖然信件稍微延遲，但你成功維護了自身與信件的安全。" },
+            { text: "自費購買塑膠套仔細封包每封信", effect: { stamina: -10, rep: 8, money: -100 }, log: "信件完好無缺地送到居民手中，大家都誇你細心！" }
+        ]
+    },
+    {
+        title: "巷口巨犬",
+        desc: "巷尾老張家的黑狗每次看到綠色制服就狂吠，今天門竟然沒關...",
+        options: [
+            { text: "拿出預先準備的狗罐頭討好牠", effect: { stamina: 0, rep: 5, money: -150 }, log: "黑狗開心地吃起罐頭，搖著尾巴目送你離開。" },
+            { text: "拿郵差包擋在身前，大聲呵斥退後", effect: { stamina: -5, rep: 0, money: 0 }, log: "你展現了郵務士的威嚴，成功將黑狗嚇退。" },
+            { text: "拔腿就跑，明天再來送這家的信", effect: { stamina: -15, rep: -5, money: 0 }, log: "雖然順利逃跑，但狼狽的模樣被路過的阿姨看到了..." }
+        ]
+    },
+    {
+        title: "孤獨的老奶奶",
+        desc: "老奶奶收到遠方兒子的信，但眼睛看不清，請求你幫她讀信內容...",
+        options: [
+            { text: "停下腳步，坐在門前讀給奶奶聽", effect: { stamina: -5, rep: 15, money: 0 }, log: "讀完信後奶奶感動落淚，頻頻拉著你的手致謝。" },
+            { text: "委婉表示信件太多，改天有空再讀", effect: { stamina: 0, rep: -8, money: 0 }, log: "你趕著去下一家送信，但心裡總覺得有些遺憾。" },
+            { text: "幫忙讀信，奶奶送你一袋自家種的水果", effect: { stamina: 10, rep: 10, money: 0 }, log: "收下美味的水果，讓接下來的工作時間充滿元氣！" }
+        ]
+    },
+    {
+        title: "配備升級抉擇",
+        desc: "郵務局開辦汰換車輛優惠認購，這是一個升級工具的好機會...",
+        options: [
+            { text: "花費 $6,000 認購野狼125打檔機車", effect: { stamina: 0, rep: 0, money: -6000, newVehicle: "野狼125" }, log: "成功升級檔車！以後送偏遠山區輕鬆多了。" },
+            { text: "繼續使用腳踏車，將錢省下來", effect: { stamina: -10, rep: 0, money: 0 }, log: "你決定繼續咬牙踩腳踏車，省下了積蓄。" },
+            { text: "購買高級舒壓護腰與防水靴", effect: { stamina: 25, rep: 0, money: -1500 }, log: "優良的裝備大大減輕了日常送信的身體負擔。" }
+        ]
+    },
+    {
+        title: "死信尋人",
+        desc: "你收到一封地址模糊不清、幾近無法辨識的神秘舊信件...",
+        options: [
+            { text: "憑著對這條街的熟悉度，挨家挨戶詢問", effect: { stamina: -15, rep: 20, money: 0 }, log: "歷經千辛萬苦終於找對失主！這封信承載了三十年的思念。" },
+            { text: "照標準作業流程，退回無人認領區", effect: { stamina: 0, rep: 0, money: 0 }, log: "依照規定處理，雖然按部就班，但也少了一段故事。" },
+            { text: "貼在郵局公佈欄，尋求市民協助", effect: { stamina: -5, rep: 8, money: 0 }, log: "公佈欄引來許多人圍觀，展現了鄰里間的熱心。" }
+        ]
+    }
+];
+
+// 開始遊戲（從設定畫面切換到遊戲畫面）
+function startGame() {
+    const nameInput = document.getElementById('player-name').value.trim();
+    if (!nameInput) {
+        alert("請輸入郵務士姓名！");
+        return;
+    }
+
+    player.name = nameInput;
+    player.startAge = parseInt(document.getElementById('start-age').value);
+    player.age = player.startAge;
+
+    // 切換介面
+    document.getElementById('setup-screen').classList.add('hidden');
+    document.getElementById('game-screen').classList.remove('hidden');
+
+    document.getElementById('display-name').innerText = player.name + " 郵務士";
+
+    addLog(`[報到日] ${player.name} 正式入職郵務局，開始了 ${player.startAge} 歲的郵務職涯。`);
+    
+    updateUI();
+    nextYear();
+}
+
+// 進入新的一年
+function nextYear() {
+    // 檢查是否達到退休年齡
+    if (player.age >= player.retireAge) {
+        endGame();
+        return;
+    }
+
+    // 每年基礎薪水與體力恢復（年資越久薪水越高）
+    let seniority = player.age - player.startAge;
+    let salary = 32000 + (seniority * 1200) + (player.reputation * 50);
+    player.money += salary;
+    player.stamina = Math.min(100, player.stamina + 20);
+
+    // 動態更新職稱
+    if (seniority >= 25) player.careerTitle = "資深特級郵務長";
+    else if (seniority >= 15) player.careerTitle = "高級郵務士";
+    else if (seniority >= 5) player.careerTitle = "熟練郵務士";
+    else player.careerTitle = "基層郵務士";
+
+    // 隨機抽選事件
+    let currentEvent = eventPool[Math.floor(Math.random() * eventPool.length)];
+
+    document.getElementById('story-text').innerHTML = `
+        <strong>【${player.age} 歲的這一年】</strong><br>
+        ${currentEvent.desc}<br><br>
+        <small style="color:#aaa;">(今年度發放基本年薪與獎金：+$${salary})</small>
+    `;
+
+    // 產生選項按鈕
+    const optionsContainer = document.getElementById('options');
+    optionsContainer.innerHTML = '';
+
+    currentEvent.options.forEach(opt => {
+        const btn = document.createElement('button');
+        btn.innerText = opt.text;
+        btn.onclick = () => makeChoice(opt);
+        optionsContainer.appendChild(btn);
+    });
+
+    updateUI();
+}
+
+// 處理玩家選擇
+function makeChoice(option) {
+    // 購車金條件檢查
+    if (option.effect.newVehicle && player.money < 6000) {
+        alert("目前的積蓄不足以認購機車！");
+        return;
+    }
+
+    // 屬性結算
+    player.stamina = Math.max(0, Math.min(100, player.stamina + option.effect.stamina));
+    player.reputation = Math.max(0, player.reputation + option.effect.rep);
+    player.money += option.effect.money;
+
+    if (option.effect.newVehicle) {
+        player.vehicle = option.effect.newVehicle;
+    }
+
+    // 寫入日誌
+    addLog(`[${player.age}歲] ${option.log}`);
+
+    // 邁向下一年
+    player.age++;
+    nextYear();
+}
+
+// 更新畫面數據
+function updateUI() {
+    document.getElementById('age').innerText = player.age;
+    document.getElementById('years-left').innerText = player.retireAge - player.age;
+    document.getElementById('stamina').innerText = player.stamina;
+    document.getElementById('reputation').innerText = player.reputation;
+    document.getElementById('money').innerText = `$${player.money.toLocaleString()}`;
+    document.getElementById('vehicle').innerText = player.vehicle;
+    document.getElementById('display-career').innerText = player.careerTitle;
+}
+
+// 日誌系統
+function addLog(text) {
+    const logBox = document.getElementById('log');
+    const newEntry = document.createElement('div');
+    newEntry.style.marginBottom = "4px";
+    newEntry.innerText = text;
+    logBox.prepend(newEntry);
+}
+
+// 退休結算（遊戲結束畫面）
+function endGame() {
+    let serviceYears = player.retireAge - player.startAge;
+    let endingTitle = "";
+    let endingDesc = "";
+
+    // 根據人情味與資金決定結局評價
+    if (player.reputation >= 120) {
+        endingTitle = "🏆 街坊鄰里的守護神";
+        endingDesc = `${player.name} 服務了長達 ${serviceYears} 年，陪伴無數家庭成長。在你退休這天，整條街的居民為你舉辦了盛大的歡送會！`;
+    } else if (player.money >= 500000) {
+        endingTitle = "💰 理財有道的退休郵務長";
+        endingDesc = `${player.name} 踏實工作 ${serviceYears} 年，憑藉優異的理財與積蓄，享受無憂無慮的尊榮退休生活。`;
+    } else {
+        endingTitle = "✉️ 盡職盡責的平凡英雄";
+        endingDesc = `${player.name} 風雨無阻地送信 ${serviceYears} 年，平平淡淡才是真，你為自己的職業生涯畫下了圓滿的句點。`;
+    }
+
+    document.getElementById('story-text').innerHTML = `
+        <h3 style="color:#ffeb3b; margin-top:0;">🎉 榮退紀念章</h3>
+        <strong>${endingTitle}</strong><br><br>
+        ${endingDesc}<br><br>
+        <hr style="border-color:#444;">
+        <strong>【生涯終點結算】</strong><br>
+        • 入職年齡：${player.startAge} 歲 | 服務年資：${serviceYears} 年<br>
+        • 最終積蓄：$${player.money.toLocaleString()}<br>
+        • 居民聲望：${player.reputation}<br>
+        • 最高載具：${player.vehicle}
+    `;
+    
+    document.getElementById('options').innerHTML = `<button onclick="location.reload()" style="text-align:center;" class="start-btn">體驗下一趟郵務人生</button>`;
+}
+</script>
+</body>
+</html>
