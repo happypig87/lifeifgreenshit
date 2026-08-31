@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>郵差人生模擬器</title>
+    <title>郵差的一生：機率決策版</title>
     <style>
         body {
             background-color: #121212;
@@ -22,41 +22,53 @@
             border: 1px solid #333;
             border-radius: 12px;
             width: 100%;
-            max-width: 650px;
+            max-width: 720px;
             padding: 25px;
             box-shadow: 0 10px 30px rgba(0,0,0,0.5);
         }
         .header {
             border-bottom: 2px solid #333;
             padding-bottom: 15px;
-            margin-bottom: 20px;
+            margin-bottom: 15px;
             display: flex;
             justify-content: space-between;
             align-items: center;
         }
         .stats-grid {
             display: grid;
-            grid-template-columns: repeat(4, 1fr);
-            gap: 10px;
+            grid-template-columns: repeat(5, 1fr);
+            gap: 8px;
             background: #2a2a2a;
             padding: 12px;
             border-radius: 8px;
-            margin-bottom: 20px;
+            margin-bottom: 15px;
             text-align: center;
+            font-size: 13px;
+        }
+        .stat-box { display: flex; flex-direction: column; align-items: center; }
+        .stat-val { font-weight: bold; font-size: 18px; margin-top: 4px; }
+        
+        .rank-poor { color: #f44336; }
+        .rank-below { color: #ff9800; }
+        .rank-avg { color: #ffeb3b; }
+        .rank-above { color: #8bc34a; }
+        .rank-elite { color: #00e676; }
+
+        .finance-bar {
+            display: flex;
+            justify-content: space-between;
+            background: #252525;
+            padding: 10px 15px;
+            border-radius: 6px;
+            margin-bottom: 20px;
             font-size: 14px;
         }
-        .stat-val {
-            color: #4caf50;
-            font-weight: bold;
-            font-size: 16px;
-            display: block;
-            margin-top: 4px;
-        }
+
         #story-text {
-            font-size: 16px;
+            font-size: 15px;
             line-height: 1.6;
-            min-height: 100px;
-            margin-bottom: 25px;
+            min-height: 90px;
+            margin-bottom: 20px;
             background: #252525;
             padding: 15px;
             border-left: 4px solid #2196f3;
@@ -67,109 +79,100 @@
             flex-direction: column;
             gap: 12px;
         }
-        button {
-            background: #333;
+        button.option-btn {
+            background: #2c2c2c;
             color: #fff;
             border: 1px solid #444;
             padding: 14px 18px;
-            border-radius: 6px;
-            font-size: 15px;
+            border-radius: 8px;
+            font-size: 14px;
             cursor: pointer;
             text-align: left;
             transition: all 0.2s ease;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
         }
-        button:hover {
-            background: #2196f3;
+        button.option-btn:hover {
+            background: #3a3a3a;
             border-color: #2196f3;
             transform: translateY(-2px);
         }
-        /* 初始設定表單樣式 */
-        .form-group {
-            margin-bottom: 20px;
-        }
-        label {
-            display: block;
-            margin-bottom: 8px;
-            font-size: 14px;
-            color: #bbb;
-        }
-        input[type="text"] {
-            width: 100%;
-            padding: 12px;
-            background: #2a2a2a;
-            border: 1px solid #444;
-            border-radius: 6px;
-            color: #fff;
-            font-size: 16px;
-            box-sizing: border-box;
-        }
-        input[type="range"] {
-            width: 100%;
-            accent-color: #2196f3;
-        }
-        .start-btn {
-            width: 100%;
-            background: #2196f3;
-            text-align: center;
+        .chance-badge {
+            font-size: 12px;
+            padding: 3px 8px;
+            border-radius: 4px;
             font-weight: bold;
-            font-size: 18px;
-            margin-top: 10px;
+            margin-left: 10px;
+            white-space: nowrap;
         }
-        .start-btn:hover {
-            background: #1976d2;
+        .chance-high { background: #1b5e20; color: #81c784; }
+        .chance-med { background: #e65100; color: #ffb74d; }
+        .chance-low { background: #b71c1c; color: #e57373; }
+
+        .form-group { margin-bottom: 20px; }
+        label { display: block; margin-bottom: 8px; font-size: 14px; color: #bbb; }
+        input[type="text"] {
+            width: 100%; padding: 12px; background: #2a2a2a; border: 1px solid #444;
+            border-radius: 6px; color: #fff; font-size: 16px; box-sizing: border-box;
         }
+        input[type="range"] { width: 100%; accent-color: #2196f3; }
+        .start-btn {
+            width: 100%; background: #2196f3; text-align: center; font-weight: bold;
+            font-size: 18px; margin-top: 10px; padding: 14px; border: none; border-radius: 6px; color: #fff; cursor: pointer;
+        }
+        .start-btn:hover { background: #1976d2; }
         #log {
-            margin-top: 20px;
-            font-size: 13px;
-            color: #888;
-            max-height: 120px;
-            overflow-y: auto;
-            border-top: 1px solid #333;
-            padding-top: 10px;
+            margin-top: 20px; font-size: 13px; color: #aaa; max-height: 140px;
+            overflow-y: auto; border-top: 1px solid #333; padding-top: 10px; line-height: 1.5;
         }
         .hidden { display: none !important; }
+        .log-success { color: #81c784; }
+        .log-fail { color: #e57373; }
     </style>
 </head>
 <body>
 
 <div id="game-card">
-    <!-- 1. 玩家創建角色介面 -->
+    <!-- 入職設定 -->
     <div id="setup-screen">
         <h2 style="margin-top:0; text-align:center;">📋 郵務人員入職登記</h2>
-        <p style="color:#aaa; text-align:center; font-size:14px; margin-bottom: 25px;">請填寫你的基本資料，開啟長達數十年的郵務生涯。</p>
+        <p style="color:#aaa; text-align:center; font-size:14px; margin-bottom: 25px;">選擇合理的處置方案可獲得較高的成功率。</p>
         
         <div class="form-group">
             <label for="player-name">郵務士姓名：</label>
-            <input type="text" id="player-name" placeholder="請輸入姓名（例如：陳大天）" value="陳大天">
+            <input type="text" id="player-name" placeholder="請輸入姓名" value="陳大明">
         </div>
 
         <div class="form-group">
             <label for="start-age">入職年齡：<span id="age-val" style="color:#ffeb3b; font-weight:bold; font-size:18px;">22</span> 歲</label>
             <input type="range" id="start-age" min="18" max="50" value="22" oninput="document.getElementById('age-val').innerText = this.value">
-            <div style="display:flex; justify-content:space-between; font-size:12px; color:#666; margin-top:5px;">
-                <span>18 歲 (社會新人)</span>
-                <span>50 歲 (中年轉職)</span>
-            </div>
         </div>
 
         <button class="start-btn" onclick="startGame()">正式報到入職</button>
     </div>
 
-    <!-- 2. 遊戲主畫面 (初始隱藏) -->
+    <!-- 遊戲主畫面 -->
     <div id="game-screen" class="hidden">
         <div class="header">
             <div>
                 <h2 style="margin:0; font-size: 20px;" id="display-name">郵務士</h2>
-                <span id="display-career" style="font-size:12px; color:#aaa;">基層郵務士</span>
+                <span id="display-career" style="font-size:12px; color:#aaa;">年資第 1 年</span>
             </div>
             <div><span id="age" style="font-size: 22px; color:#ffeb3b;">18</span> 歲 (退休倒數 <span id="years-left">--</span> 年)</div>
         </div>
 
         <div class="stats-grid">
-            <div>體力<span id="stamina" class="stat-val">100</span></div>
-            <div>人情味<span id="reputation" class="stat-val">50</span></div>
-            <div>積蓄<span id="money" class="stat-val">$0</span></div>
-            <div>載具<span id="vehicle" class="stat-val" style="color:#00bcd4;">徒步</span></div>
+            <div class="stat-box">體力<span id="stamina" class="stat-val">50</span></div>
+            <div class="stat-box">情商<span id="eq" class="stat-val">50</span></div>
+            <div class="stat-box">職場聲望<span id="reputation" class="stat-val">50</span></div>
+            <div class="stat-box">應變能力<span id="adaptability" class="stat-val">50</span></div>
+            <div class="stat-box">工作評價<span id="performance" class="stat-val">50</span></div>
+        </div>
+
+        <div class="finance-bar">
+            <div>本年薪資：<span id="salary-display" style="color:#ffc107; font-weight:bold;">76 萬</span></div>
+            <div>累積總資產：<span id="money" style="color:#4caf50; font-weight:bold;">$0 萬</span></div>
         </div>
 
         <div id="story-text">載入中...</div>
@@ -181,211 +184,235 @@
 </div>
 
 <script>
-// 玩家資料與狀態
 let player = {
-    name: "",
-    age: 18,
-    startAge: 18,
-    retireAge: 65,
-    stamina: 100,
-    reputation: 50,
-    money: 1000,
-    vehicle: "腳踏車",
-    careerTitle: "基層郵務士"
+    name: "", age: 18, startAge: 18, retireAge: 65,
+    stamina: 50, eq: 50, reputation: 50, adaptability: 50, performance: 50,
+    money: 0
 };
 
-// 事件資料庫
+const salaryTable = {
+    1: 76, 2: 84, 3: 86, 4: 88, 5: 90, 6: 94, 7: 94, 8: 99, 9: 101, 10: 103,
+    11: 106, 12: 107, 13: 109, 14: 110, 15: 111, 16: 113, 17: 115
+};
+
+function calculateSalary(serviceYear) {
+    let salaryInWan = serviceYear <= 17 ? salaryTable[serviceYear] : ((serviceYear - 18) % 5 + 1 === 5 ? 128 : 121);
+    return { amount: salaryInWan * 10000, displayWan: salaryInWan, statusTag: `年資第 ${serviceYear} 年` };
+}
+
+// 包含好壞結果與基礎成功率的事件池
 const eventPool = [
     {
-        title: "暴雨突襲",
-        desc: "午後突下傾盆大雨，你身上的防水布快要撐不住了，前方還有數十封掛號信未送達...",
+        title: "暴雨突襲與淹水路段",
+        desc: "午後突下狂風暴雨，前方路段積水漸深，包裹有被淋濕或泡水的風險...",
         options: [
-            { text: "冒雨繼續送完，絕不能耽誤信件！", effect: { stamina: -25, rep: 12, money: 0 }, log: "雖然全身濕透感冒了，但居民對你的敬業態度讚不絕口。" },
-            { text: "先在路邊騎樓躲雨，等雨勢稍緩", effect: { stamina: -5, rep: 0, money: 0 }, log: "雖然信件稍微延遲，但你成功維護了自身與信件的安全。" },
-            { text: "自費購買塑膠套仔細封包每封信", effect: { stamina: -10, rep: 8, money: -100 }, log: "信件完好無缺地送到居民手中，大家都誇你細心！" }
+            {
+                text: "【穩健方案】暫避騎樓，將郵件雙層包覆防潮後等待雨勢減緩",
+                baseChance: 85,
+                statCheck: "adaptability",
+                success: {
+                    effect: { stamina: -2, adaptability: 4, performance: 4 },
+                    log: "✅ [成功] 處置得當！雖然稍微延誤，但信件毫髮無傷，獲得客戶讚許。"
+                },
+                fail: {
+                    effect: { performance: -3 },
+                    log: "❌ [失敗] 雨勢遲遲未停，導致當日部分掛號件延誤遞送。"
+                }
+            },
+            {
+                text: "【平衡方案】尋找替代遠路繞過淹水區",
+                baseChance: 60,
+                statCheck: "stamina",
+                success: {
+                    effect: { stamina: -6, adaptability: 6, performance: 6 },
+                    log: "✅ [成功] 憑著對地形的熟練繞出淹水區，準時送達所有郵件！"
+                },
+                fail: {
+                    effect: { stamina: -8, performance: -4 },
+                    log: "❌ [失敗] 繞路時迷失在陌生巷弄，白白浪費大量時間與體力。"
+                }
+            },
+            {
+                text: "【冒險方案】油門一催，直接騎機車硬闖積水路段！",
+                baseChance: 30,
+                statCheck: "adaptability",
+                success: {
+                    effect: { stamina: -4, reputation: 8, performance: 8 },
+                    log: "🎉 [大成功] 居然奇蹟般衝過積水！被目擊民眾發到網上大讚「最強郵差」！"
+                },
+                fail: {
+                    effect: { stamina: -12, performance: -10, money: -5000 },
+                    log: "💥 [慘烈失敗] 機車在水深處熄火進水！引擎受損且下半身包裹全濕..."
+                }
+            }
         ]
     },
     {
-        title: "巷口巨犬",
-        desc: "巷尾老張家的黑狗每次看到綠色制服就狂吠，今天門竟然沒關...",
+        title: "巷口遇上未繫繩狂犬",
+        desc: "一隻大型犬突然衝出對你狂吠，阻擋了整條巷子的遞送路線...",
         options: [
-            { text: "拿出預先準備的狗罐頭討好牠", effect: { stamina: 0, rep: 5, money: -150 }, log: "黑狗開心地吃起罐頭，搖著尾巴目送你離開。" },
-            { text: "拿郵差包擋在身前，大聲呵斥退後", effect: { stamina: -5, rep: 0, money: 0 }, log: "你展現了郵務士的威嚴，成功將黑狗嚇退。" },
-            { text: "拔腿就跑，明天再來送這家的信", effect: { stamina: -15, rep: -5, money: 0 }, log: "雖然順利逃跑，但狼狽的模樣被路過的阿姨看到了..." }
-        ]
-    },
-    {
-        title: "孤獨的老奶奶",
-        desc: "老奶奶收到遠方兒子的信，但眼睛看不清，請求你幫她讀信內容...",
-        options: [
-            { text: "停下腳步，坐在門前讀給奶奶聽", effect: { stamina: -5, rep: 15, money: 0 }, log: "讀完信後奶奶感動落淚，頻頻拉著你的手致謝。" },
-            { text: "委婉表示信件太多，改天有空再讀", effect: { stamina: 0, rep: -8, money: 0 }, log: "你趕著去下一家送信，但心裡總覺得有些遺憾。" },
-            { text: "幫忙讀信，奶奶送你一袋自家種的水果", effect: { stamina: 10, rep: 10, money: 0 }, log: "收下美味的水果，讓接下來的工作時間充滿元氣！" }
-        ]
-    },
-    {
-        title: "配備升級抉擇",
-        desc: "郵務局開辦汰換車輛優惠認購，這是一個升級工具的好機會...",
-        options: [
-            { text: "花費 $6,000 認購野狼125打檔機車", effect: { stamina: 0, rep: 0, money: -6000, newVehicle: "野狼125" }, log: "成功升級檔車！以後送偏遠山區輕鬆多了。" },
-            { text: "繼續使用腳踏車，將錢省下來", effect: { stamina: -10, rep: 0, money: 0 }, log: "你決定繼續咬牙踩腳踏車，省下了積蓄。" },
-            { text: "購買高級舒壓護腰與防水靴", effect: { stamina: 25, rep: 0, money: -1500 }, log: "優良的裝備大大減輕了日常送信的身體負擔。" }
-        ]
-    },
-    {
-        title: "死信尋人",
-        desc: "你收到一封地址模糊不清、幾近無法辨識的神秘舊信件...",
-        options: [
-            { text: "憑著對這條街的熟悉度，挨家挨戶詢問", effect: { stamina: -15, rep: 20, money: 0 }, log: "歷經千辛萬苦終於找對失主！這封信承載了三十年的思念。" },
-            { text: "照標準作業流程，退回無人認領區", effect: { stamina: 0, rep: 0, money: 0 }, log: "依照規定處理，雖然按部就班，但也少了一段故事。" },
-            { text: "貼在郵局公佈欄，尋求市民協助", effect: { stamina: -5, rep: 8, money: 0 }, log: "公佈欄引來許多人圍觀，展現了鄰里間的熱心。" }
+            {
+                text: "【穩健方案】保持冷靜不對視，用郵差包擋在身前緩慢後退",
+                baseChance: 80,
+                statCheck: "eq",
+                success: {
+                    effect: { eq: 4, adaptability: 3 },
+                    log: "✅ [成功] 防禦姿態生效，犬隻見你無威脅後自行離去。"
+                },
+                fail: {
+                    effect: { stamina: -4, eq: -3 },
+                    log: "❌ [失敗] 僵持了近 20 分鐘，心情受到嚴重影響且耽誤行程。"
+                }
+            },
+            {
+                text: "【平衡方案】拿出隨身攜帶的狗狗肉乾進行親和安撫",
+                baseChance: 60,
+                statCheck: "eq",
+                success: {
+                    effect: { eq: 8, reputation: 5, money: -200 },
+                    log: "✅ [成功] 肉乾外交成功！狗狗收服變好友，以後這條巷子暢行無阻。"
+                },
+                fail: {
+                    effect: { eq: -5, money: -200 },
+                    log: "❌ [失敗] 狗狗吃完肉乾依然對你狂吠，賠了夫人又折兵。"
+                }
+            },
+            {
+                text: "【冒險方案】拿起防身大聲呵斥並大步向前硬壓氣勢！",
+                baseChance: 25,
+                statCheck: "stamina",
+                success: {
+                    effect: { reputation: 10, stamina: 4 },
+                    log: "🎉 [大成功] 霸氣側漏！一聲大吼直接把惡犬嚇得夾尾巴逃跑！"
+                },
+                fail: {
+                    effect: { stamina: -15, performance: -8, money: -3000 },
+                    log: "💥 [慘烈失敗] 激怒了犬隻！褲管被撕裂且受輕傷，必須就醫打破傷風。"
+                }
+            }
         ]
     }
 ];
 
-// 開始遊戲（從設定畫面切換到遊戲畫面）
 function startGame() {
     const nameInput = document.getElementById('player-name').value.trim();
-    if (!nameInput) {
-        alert("請輸入郵務士姓名！");
-        return;
-    }
+    if (!nameInput) return alert("請輸入姓名！");
 
     player.name = nameInput;
     player.startAge = parseInt(document.getElementById('start-age').value);
     player.age = player.startAge;
 
-    // 切換介面
     document.getElementById('setup-screen').classList.add('hidden');
     document.getElementById('game-screen').classList.remove('hidden');
-
     document.getElementById('display-name').innerText = player.name + " 郵務士";
 
-    addLog(`[報到日] ${player.name} 正式入職郵務局，開始了 ${player.startAge} 歲的郵務職涯。`);
-    
-    updateUI();
+    addLog(`[報到] ${player.name} 正式報到，初始五維能力值均為 50（聯盟平均）。`);
     nextYear();
 }
 
-// 進入新的一年
 function nextYear() {
-    // 檢查是否達到退休年齡
-    if (player.age >= player.retireAge) {
-        endGame();
-        return;
-    }
+    if (player.age >= player.retireAge) return endGame();
 
-    // 每年基礎薪水與體力恢復（年資越久薪水越高）
-    let seniority = player.age - player.startAge;
-    let salary = 32000 + (seniority * 1200) + (player.reputation * 50);
-    player.money += salary;
-    player.stamina = Math.min(100, player.stamina + 20);
+    let serviceYear = (player.age - player.startAge) + 1;
+    let salaryData = calculateSalary(serviceYear);
+    player.money += salaryData.amount;
 
-    // 動態更新職稱
-    if (seniority >= 25) player.careerTitle = "資深特級郵務長";
-    else if (seniority >= 15) player.careerTitle = "高級郵務士";
-    else if (seniority >= 5) player.careerTitle = "熟練郵務士";
-    else player.careerTitle = "基層郵務士";
+    document.getElementById('display-career').innerHTML = salaryData.statusTag;
+    document.getElementById('salary-display').innerText = `${salaryData.displayWan} 萬`;
 
-    // 隨機抽選事件
     let currentEvent = eventPool[Math.floor(Math.random() * eventPool.length)];
 
     document.getElementById('story-text').innerHTML = `
-        <strong>【${player.age} 歲的這一年】</strong><br>
+        <strong>【${player.age} 歲（年資第 ${serviceYear} 年）】${currentEvent.title}</strong><br>
         ${currentEvent.desc}<br><br>
-        <small style="color:#aaa;">(今年度發放基本年薪與獎金：+$${salary})</small>
+        <small style="color:#aaa;">(今年度領取年薪：+$${salaryData.displayWan} 萬元)</small>
     `;
 
-    // 產生選項按鈕
     const optionsContainer = document.getElementById('options');
     optionsContainer.innerHTML = '';
 
     currentEvent.options.forEach(opt => {
+        // 計算最終成功率：基礎成功率 + (相關能力值 - 50) * 0.5
+        let playerStat = player[opt.statCheck] || 50;
+        let finalChance = Math.min(95, Math.max(5, opt.baseChance + Math.round((playerStat - 50) * 0.5)));
+
+        let badgeClass = finalChance >= 75 ? 'chance-high' : (finalChance >= 45 ? 'chance-med' : 'chance-low');
+        let badgeText = finalChance >= 75 ? '高合理性' : (finalChance >= 45 ? '中合理性' : '低風險高回報');
+
         const btn = document.createElement('button');
-        btn.innerText = opt.text;
-        btn.onclick = () => makeChoice(opt);
+        btn.className = 'option-btn';
+        btn.innerHTML = `
+            <span>${opt.text}</span>
+            <span class="chance-badge ${badgeClass}">${badgeText} (${finalChance}%)</span>
+        `;
+        btn.onclick = () => makeChoice(opt, finalChance);
         optionsContainer.appendChild(btn);
     });
 
     updateUI();
 }
 
-// 處理玩家選擇
-function makeChoice(option) {
-    // 購車金條件檢查
-    if (option.effect.newVehicle && player.money < 6000) {
-        alert("目前的積蓄不足以認購機車！");
-        return;
+function clamp2080(val) { return Math.max(20, Math.min(80, val)); }
+
+function makeChoice(option, finalChance) {
+    // 進行機率判定 (1 ~ 100)
+    let roll = Math.floor(Math.random() * 100) + 1;
+    let isSuccess = roll <= finalChance;
+    let result = isSuccess ? option.success : option.fail;
+
+    // 套用能力值變化
+    if (result.effect) {
+        ['stamina', 'eq', 'reputation', 'adaptability', 'performance'].forEach(s => {
+            if (result.effect[s]) player[s] = clamp2080(player[s] + result.effect[s]);
+        });
+        if (result.effect.money) player.money += result.effect.money;
     }
 
-    // 屬性結算
-    player.stamina = Math.max(0, Math.min(100, player.stamina + option.effect.stamina));
-    player.reputation = Math.max(0, player.reputation + option.effect.rep);
-    player.money += option.effect.money;
+    addLog(`[${player.age}歲] ${result.log}`, isSuccess);
 
-    if (option.effect.newVehicle) {
-        player.vehicle = option.effect.newVehicle;
-    }
-
-    // 寫入日誌
-    addLog(`[${player.age}歲] ${option.log}`);
-
-    // 邁向下一年
     player.age++;
     nextYear();
 }
 
-// 更新畫面數據
+function getRankClass(val) {
+    if (val <= 30) return 'rank-poor';
+    if (val <= 40) return 'rank-below';
+    if (val <= 50) return 'rank-avg';
+    if (val <= 60) return 'rank-above';
+    return 'rank-elite';
+}
+
 function updateUI() {
     document.getElementById('age').innerText = player.age;
     document.getElementById('years-left').innerText = player.retireAge - player.age;
-    document.getElementById('stamina').innerText = player.stamina;
-    document.getElementById('reputation').innerText = player.reputation;
-    document.getElementById('money').innerText = `$${player.money.toLocaleString()}`;
-    document.getElementById('vehicle').innerText = player.vehicle;
-    document.getElementById('display-career').innerText = player.careerTitle;
+    document.getElementById('money').innerText = `$${(player.money / 10000).toFixed(1)} 萬`;
+
+    ['stamina', 'eq', 'reputation', 'adaptability', 'performance'].forEach(stat => {
+        const el = document.getElementById(stat);
+        el.innerText = player[stat];
+        el.className = `stat-val ${getRankClass(player[stat])}`;
+    });
 }
 
-// 日誌系統
-function addLog(text) {
+function addLog(text, isSuccess = true) {
     const logBox = document.getElementById('log');
     const newEntry = document.createElement('div');
-    newEntry.style.marginBottom = "4px";
+    newEntry.className = isSuccess ? 'log-success' : 'log-fail';
     newEntry.innerText = text;
     logBox.prepend(newEntry);
 }
 
-// 退休結算（遊戲結束畫面）
 function endGame() {
     let serviceYears = player.retireAge - player.startAge;
-    let endingTitle = "";
-    let endingDesc = "";
-
-    // 根據人情味與資金決定結局評價
-    if (player.reputation >= 120) {
-        endingTitle = "🏆 街坊鄰里的守護神";
-        endingDesc = `${player.name} 服務了長達 ${serviceYears} 年，陪伴無數家庭成長。在你退休這天，整條街的居民為你舉辦了盛大的歡送會！`;
-    } else if (player.money >= 500000) {
-        endingTitle = "💰 理財有道的退休郵務長";
-        endingDesc = `${player.name} 踏實工作 ${serviceYears} 年，憑藉優異的理財與積蓄，享受無憂無慮的尊榮退休生活。`;
-    } else {
-        endingTitle = "✉️ 盡職盡責的平凡英雄";
-        endingDesc = `${player.name} 風雨無阻地送信 ${serviceYears} 年，平平淡淡才是真，你為自己的職業生涯畫下了圓滿的句點。`;
-    }
+    let avgStat = Math.round((player.stamina + player.eq + player.reputation + player.adaptability + player.performance) / 5);
 
     document.getElementById('story-text').innerHTML = `
-        <h3 style="color:#ffeb3b; margin-top:0;">🎉 榮退紀念章</h3>
-        <strong>${endingTitle}</strong><br><br>
-        ${endingDesc}<br><br>
-        <hr style="border-color:#444;">
-        <strong>【生涯終點結算】</strong><br>
-        • 入職年齡：${player.startAge} 歲 | 服務年資：${serviceYears} 年<br>
-        • 最終積蓄：$${player.money.toLocaleString()}<br>
-        • 居民聲望：${player.reputation}<br>
-        • 最高載具：${player.vehicle}
+        <h3 style="color:#ffeb3b; margin-top:0;">🎉 榮退紀念章 (生涯結算)</h3>
+        <strong>${player.name} 郵務士，恭喜你順利退休！</strong><br>
+        服役長達 ${serviceYears} 年，終點五維平均為 <strong class="${getRankClass(avgStat)}">${avgStat} 分</strong>。<br>
+        累積資產：$${(player.money / 10000).toFixed(1)} 萬元。
     `;
-    
-    document.getElementById('options').innerHTML = `<button onclick="location.reload()" style="text-align:center;" class="start-btn">體驗下一趟郵務人生</button>`;
+    document.getElementById('options').innerHTML = `<button onclick="location.reload()" class="start-btn">重新開始新職涯</button>`;
 }
 </script>
 </body>
